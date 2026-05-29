@@ -10,7 +10,7 @@ beforeAll(() => {
   globalThis.Request = Request;
   // @ts-ignore
   globalThis.Response = Response;
-  globalThis.TextEncoder = TextEncoder;
+  globalThis.TextEncoder = TextEncoder as any;
   // @ts-ignore
   globalThis.TextDecoder = TextDecoder;
 });

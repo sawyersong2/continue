@@ -14,7 +14,11 @@ const { copySqlite } = require("./download-copy-sqlite");
 const { generateAndCopyConfigYamlSchema } = require("./generate-copy-config");
 const { installAndCopyNodeModules } = require("./install-copy-nodemodule");
 const { npmInstall } = require("./npm-install");
-const { writeBuildTimestamp, continueDir } = require("./utils");
+const {
+  downloadRipgrepBinary,
+  writeBuildTimestamp,
+  continueDir,
+} = require("./utils");
 
 // Clear folders that will be packaged to ensure clean slate
 rimrafSync(path.join(__dirname, "..", "bin"));
@@ -340,6 +344,8 @@ void (async () => {
   } else {
     console.log("[info] Skipping sqlite download because SKIP_INSTALLS=true");
   }
+
+  await downloadRipgrepBinary(target);
 
   console.log("[info] Copying sqlite node binding from core");
   await new Promise((resolve, reject) => {
