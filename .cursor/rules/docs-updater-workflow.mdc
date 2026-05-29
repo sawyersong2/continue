@@ -1,0 +1,32 @@
+---
+description: 
+alwaysApply: true
+---
+
+# docs-updater 工作流规则
+
+当任务属于“文档同步”范畴时，必须优先使用 `docs-updater` subagent，而不是直接在当前会话里手工更新文档。
+
+## 触发范围
+
+以下场景一律先调用 `docs-updater`：
+
+- 同步或补齐 `docs-harness/` 文档
+- 新建或推进 `docs-harness/requirements/NNN-*`
+- 更新 `docs-harness/progress.md`
+- 执行 checkpoint / 工作日志沉淀
+- 更新 `docs-harness/architecture/`、`docs-harness/features/`、`docs-harness/postmortem/`
+- 校准 `docs-harness/README.md`、`docs-harness/requirements/README.md`、`docs-harness/features/README.md` 等索引
+- 代码完成后需要补文档、同步状态、整理 README
+
+## 执行要求
+
+1. 先由主智能体判断本次是否属于文档同步任务。
+2. 一旦属于上述范围，优先 dispatch `docs-updater` subagent 执行。
+3. 主智能体负责提供上下文、代码改动背景和目标模块，但不直接替代 `docs-updater` 完成文档编辑。
+4. 若本次不适合使用 `docs-updater`，必须在回复中给出简短原因。
+
+## 例外
+
+- 纯业务代码实现、且本轮没有任何文档同步要求时，可不调用 `docs-updater`
+- 用户明确要求“不要用 subagent”时，遵从用户要求

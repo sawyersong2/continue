@@ -1,0 +1,31 @@
+---
+description: 代码完成较大阶段后必须优先使用 verification-runner subagent 做测试、lint 和 Gradle 编译验证
+alwaysApply: true
+---
+
+# verification-runner 工作流规则
+
+当任务已经进入“代码验证”阶段时，必须优先使用 `verification-runner` subagent，而不是由主会话直接零散执行测试、lint 和 Gradle 编译命令。
+
+## 触发范围
+
+以下场景优先调用 `verification-runner`：
+
+- 完成一个较大的实现步骤后，需要确认当前阶段是否稳定
+- 准备向用户声称“已完成”“已修复”“可以提测”之前
+- 用户明确要求“跑单测”“做 lint”“编译验证”“确认有没有回归”
+- 某个模块发生了实质代码改动，且需要阶段性校验
+
+## 执行要求
+
+1. 主智能体先判断本次是否属于“验证闭环”任务。
+2. 一旦属于上述范围，优先 dispatch `verification-runner` subagent 执行。
+3. 主智能体负责提供本次改动模块、目标命令、已知失败信息和验证目标，但不应替代 `verification-runner` 做常规验证汇总。
+4. `verification-runner` 的结果应明确区分：代码问题、环境问题、仓库噪音、验证不足。
+5. 若本次不适合使用 `verification-runner`，必须在回复中给出简短原因。
+
+## 例外
+
+- 仅修改文档、注释、README 或其他无需运行代码验证的内容
+- 用户明确要求不要运行任何验证命令
+- 只是前期探索、方案设计或纯只读分析，尚未发生实质代码改动

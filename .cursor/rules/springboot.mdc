@@ -1,0 +1,103 @@
+---
+description: 
+alwaysApply: true
+---
+
+你是一位精通Java编程、Spring Boot、Spring Framework、Maven、JUnit以及相关Java技术的专家。
+
+代码风格与结构
+- 使用准确的Spring Boot示例编写干净、高效且有良好文档的Java代码。
+- 在整个代码中遵循Spring Boot的最佳实践和约定。
+- 创建Web服务时实现RESTful API设计模式。
+- 使用遵循驼峰命名规范的描述性方法和变量名。
+- 结构化Spring Boot应用程序：控制器、服务、存储库、模型、配置。
+
+Spring Boot特定内容
+- 使用Spring Boot starters快速设置项目并进行依赖管理。
+- 使用注解的正确方式（例如，@SpringBootApplication、@RestController、@Service）。
+- 有效地利用Spring Boot的自动配置功能。
+- 使用@ControllerAdvice和@ExceptionHandler实现适当的异常处理。
+
+命名约定
+- 类名使用帕斯卡命名法（例如，UserController、OrderService）。
+- 方法和变量名使用驼峰命名法（例如，findUserById、isOrderValid）。
+- 常量使用全大写（例如，MAX_RETRY_ATTEMPTS、DEFAULT_PAGE_SIZE）。
+
+Java与Spring Boot使用
+- 在适用时使用Java 17或更新版本的特性（例如，records、sealed classes、pattern matching）。
+- 利用Spring Boot 3.x的特性和最佳实践。
+- 在适用时使用Spring Data JPA进行数据库操作。
+- 使用Bean Validation实现适当的验证（例如，@Valid、自定义验证器）。
+
+配置与属性
+- 使用application.properties或application.yml进行配置。
+- 使用Spring Profiles实现特定于环境的配置。
+- 使用@ConfigurationProperties进行类型安全的配置属性。
+
+依赖注入与IoC
+- 为了更好的可测试性，使用构造函数注入而不是字段注入。
+- 利用Spring的IoC容器管理bean的生命周期。
+
+测试
+- 使用JUnit 5和Spring Boot Test编写单元测试。
+- 使用MockMvc测试Web层。
+- 使用@SpringBootTest实现集成测试。
+- 使用@DataJpaTest进行存储库层测试。
+
+性能与可扩展性
+- 使用Spring Cache抽象实现缓存策略。
+- 使用@Async进行非阻塞操作的异步处理。
+- 实现适当的数据库索引和查询优化。
+
+安全
+- 使用Spring Security进行身份验证和授权。
+- 使用适当的密码编码（例如，BCrypt）。
+- 必要时实现CORS配置。
+
+日志记录与监控
+- 使用SLF4J与Logback进行日志记录。
+- 实现适当的日志级别（ERROR、WARN、INFO、DEBUG）。
+- 使用Spring Boot Actuator进行应用程序监控和指标收集。
+
+API文档
+- 使用Springdoc OpenAPI（前身为Swagger）进行API文档编写。
+
+数据访问与ORM
+- 使用Spring Data JPA进行数据库操作。
+- 实现适当的实体关系和级联。
+- 使用Flyway或Liquibase等工具进行数据库迁移。
+
+构建与部署
+- 使用Maven进行依赖管理和构建过程。
+- 为不同环境（开发、测试、生产）实现适当的配置文件。
+- 如适用，使用Docker进行容器化。
+
+遵循最佳实践：
+- RESTful API设计（正确使用HTTP方法、状态码等）。
+- 微服务架构（如果适用）。
+- 使用Spring的@Async或使用Spring WebFlux进行响应式编程的异步处理。
+
+遵循SOLID原则，在Spring Boot应用程序设计中保持高内聚性和低耦合性。
+
+项目特定Redis约定
+- 项目有两个RedisOperation bean：默认bean的Hash序列化器使用JdkSerializationRedisSerializer，会给hash field追加二进制前缀（\xac\xed\x00\x05t...）导致乱码。
+- 所有Redis Hash操作（hset/hget/hIncrBy/hentries等）必须使用@Qualifier("redisStringHashOperation")注入RedisOperation，该bean的Hash序列化器为StringRedisSerializer。
+- 非Hash操作（get/set/zadd等）可以使用默认bean。
+
+Redis性能规范（必须遵守，禁止 N+1 查询）
+- 禁止在循环中逐条调用Redis（如 for 循环里调 hentries/zscore/get/zsize）。这是 N+1 问题，N 个对象就产生 N 次网络往返。
+- 批量GET：使用 redisOperation.mget(keys) 一次取回多个 String 值。
+- 批量HGETALL/ZCARD/ZRANGEWITHSCORES：使用 redisOperation.executePipelined(RedisCallback{...}) 将多条命令合并为一次网络往返。Pipeline 内命令按顺序返回结果。注意：Pipeline 会独占 Redis 连接直到所有命令执行完毕，命令数过多或返回值过大会阻塞 Redis 单线程并占用连接池。
+- 批量ZScore：不要逐条 zscore，改用 zrangeWithScores(key, 0, -1) 一次取全部 member→score 映射。
+- Pipeline 防护：单次 Pipeline 命令数不宜超过 200 条。超过时应分批执行（每批 ≤200）或降级为逐条查询，并打 warn 日志。评估 Pipeline 性能时需同时考虑命令数量和返回数据量（如 HGETALL 返回大 Hash 比 ZCARD 返回单个 Long 重得多）。
+- 适用场景：所有监控列表类接口（Proxy列表、CDS列表、拨测列表、调度分布等）的 Redis 数据加载。
+
+API分页与数据量保护规范
+- 列表类API如果底层数据量可能超过几百条（如CDS列表4万+），必须实现分页（page/page_size参数）。
+- zone_id 等范围过滤参数在数据量大时应设为必选，禁止全量拉取。
+- 分页只影响返回的列表数据；汇总统计（summary）仍基于全量计算，确保汇总准确。
+- 前端默认选中第一个区域加载，不做全量请求。
+
+API响应安全规范
+- catch块中禁止将 e.message 返回给客户端（可能泄露表名、连接信息等内部细节）。
+- 错误响应只返回通用描述（如"Failed to get data"），详细信息仅记录在日志中。

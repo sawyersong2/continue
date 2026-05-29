@@ -1,0 +1,49 @@
+---
+alwaysApply: true
+---
+### Refactoring Principles
+
+1. **Preserve Public API**  
+   Keep public method names, signatures, and return values unchanged unless absolutely necessary.
+
+2. **Extract to Private Methods**  
+   Move common or repeated code into private or helper methods to eliminate duplication.
+
+3. **Improve Readability, Maintainability, and Efficiency**  
+   Refactor code to improve clarity, ease of modification, and performance where possible.
+
+4. **Take Advantage of Modern Language Features**  
+   Use modern syntax or language features (e.g., lambdas, streams, pattern matching) to simplify the code.
+
+5. **Rename Variables and Reorder Code**  
+   Rename variables for clarity and reorganize code for logical flow as needed.
+
+6. **Remove Dead or Unused Code**  
+   Delete unnecessary, unused, or commented-out code to keep the codebase clean.
+
+7. **Follow Consistent Coding Conventions**  
+   Adhere to project style guides regarding indentation, naming, and spacing.
+
+8. **Add Appropriate Documentation**  
+   Update or add comments and documentation where logic is complex or non-obvious.
+
+9. **Write or Update Unit Tests**  
+   Ensure existing tests still pass, and add tests to cover new or changed logic if required.
+
+10. **Limit Scope of Changes**  
+    Make small, incremental changes to minimize risk and ease code review.
+
+11. **Avoid Changing Business Logic**  
+    Don’t change business rules or introduce new features unless explicitly requested.
+
+12. **Ensure Backward Compatibility**  
+    Guarantee the code works with existing clients/users unless breaking changes are permitted.
+
+13. **Provide Complete, Unomitted Code**  
+    **Always provide full, unabridged code in refactoring responses.** Avoid using ellipses (…) or omitting sections, to ensure completeness, context, and ease of review.
+
+14. **Verify All New References**  
+    After editing code, verify every newly introduced identifier (constant, variable, function, class) has a corresponding definition. Specifically: if you add a reference like `MAX_PAGE_SIZE` in method body, immediately check the companion object / class scope for its definition. Missing definitions are the most common edit error.
+
+15. **End-to-End Field Alignment Check**  
+    When a frontend template binds to API response fields (e.g., `z.cds_count`), verify the actual API response contains those exact field names. When switching data sources (e.g., from one API to another), check that all template bindings match the new response structure. Field name mismatches between API response and template cause `undefined` display errors.

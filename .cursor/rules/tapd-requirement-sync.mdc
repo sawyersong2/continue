@@ -1,0 +1,62 @@
+---
+description: 新建或跟进 bk-cds 需求时，在 TAPD BKW（workspace_id 69990282）创建/更新需求单：标题前缀【云桌面后台】，并在开发各阶段用 MCP 同步 TAPD 状态。
+alwaysApply: true
+---
+
+# TAPD 需求单（BKW）创建与状态同步
+
+## 适用范围
+
+- 执行 **`new-requirement` skill** 创建 `docs-harness/requirements/NNN-*` 时
+- 本地需求状态在 **规划中 → 开发中 → 测试中 → 已完成/已取消** 之间变化时
+- 执行 **checkpoint**、合并主干、验收节点等阶段性收尾时
+
+若当前会话 **无法调用 TAPD MCP**（未配置或调用失败）：在 `docs-harness/progress.md` 或对话中记录「待补 TAPD」，**不阻塞**编码与文档工作；具备条件后补录或补更新。
+
+## 固定参数
+
+| 项 | 值 |
+|----|-----|
+| TAPD 项目 | BKW |
+| `workspace_id` | **69990282**（数字或字符串均可） |
+| 需求标题前缀 | **【云桌面后台】**（前缀后接简短需求名，与 `docs-harness/requirements` 目录语义一致） |
+
+## MCP 工具
+
+使用 **TAPD MCP**（`user-tapd_mcp_http`）：通过 `lookup_tool_param_schema` 确认参数后，用 `proxy_execute_tool` 执行：
+
+- **创建**：`stories_create`
+- **更新状态/描述**：`stories_update`
+
+不确定内部状态码时，可先 `tapd_field_detail_get`（`object_type`: `story`，字段 `status`）查看 BKW 项目可选值。
+
+## 新建需求时（与 new-requirement 配套）
+
+1. 在本地创建 `docs-harness/requirements/NNN-name/` 与三件套模板后，**尽快**调用 `stories_create`：
+   - `workspace_id`: `69990282`
+   - `name`: `【云桌面后台】` + 与需求一致的中文短标题（可与 `requirements.md` 主标题对应）
+   - `description`: 建议包含：本地路径 `docs-harness/requirements/NNN-name/`、需求编号 `NNN`、背景/目标摘要；可附 TAPD 关键字 `--story=<id>` 若团队有规范
+2. 将返回的 **19 位需求长 ID** 写入该需求 `requirements.md` 顶部元数据，例如：
+   - `> TAPD Story ID: 1069990282133564892`
+3. 在 `docs-harness/requirements/README.md` 中可为该条备注「已建 TAPD」（可选）。
+
+## 开发过程中「自动」同步 TAPD 状态
+
+在 **无 CI 钩子** 的前提下，由 **AI 助手在关键节点主动调用** `stories_update`，与本地 `requirements.md` / `README.md` 中的状态保持一致：
+
+| 本地/文档状态 | 建议 TAPD 动作 | 说明 |
+|---------------|----------------|------|
+| 规划中 | 创建后默认多为 `status_10`（backlog/规划中）；若已创建则一般无需改 | 与 `tapd_field_detail_get` 返回值为准 |
+| 开发中 | `stories_update`，`status` 设为 **`status_3`**（doing） | 开始实质编码或方案已定稿进入实现时 |
+| 测试中 | `stories_update`，`status` 设为 **`status_4`**（for test / 待验收） | 提测、联调或 MR 进入测试验证阶段 |
+| 已完成 | `stories_update`，`status` 设为 **`status_8`**（done / 已实现）或团队规定的「验收完成」终态 | 合并发布或验收关闭时；以字段可选值为准 |
+| 已取消 | `stories_update`，`status` 设为 **`status_9`**（refuse / 已拒绝）或流程中的取消态 | 需求废弃时 |
+
+**重要**：更新状态优先传 **`status`** 为上述 **内部枚举**（如 `status_3`），避免仅传中文 `v_status` 导致界面与 API 不一致。
+
+每次变更 TAPD 后，同步更新本地 `requirements.md` / `README` 中的状态行，避免两套真相漂移。
+
+## 与 checkpoint / 工作流的关系
+
+- 与 `workflow.mdc` 中「需求状态」「checkpoint 清单」一并核对：若需求状态变更，**优先或同时**更新 TAPD。
+- 文档类大批量同步仍遵循 `docs-updater-workflow.mdc`；**TAPD 单次调用很轻量**，可由主会话直接执行 `proxy_execute_tool`，无需为此单独起 docs-updater。
